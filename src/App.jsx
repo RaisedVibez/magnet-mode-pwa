@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
+/* ---------- Demo data ---------- */
 const tracks = [
   "3:33 HR Magnetic",
   "Everything is a Miracle",
@@ -8,14 +9,13 @@ const tracks = [
   "Future Timeline 8/8 Portal",
 ]
 
-// ---- Local storage helpers ----
+/* ---------- Helpers ---------- */
 function readLS(key, fallback) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback } catch { return fallback }
 }
 function writeLS(key, v) { try { localStorage.setItem(key, JSON.stringify(v)) } catch {} }
-const todayISO = () => new Date().toISOString().slice(0,10)
+const todayISO = () => new Date().toISOString().slice(0, 10)
 
-// ---- Greeting helper ----
 function getGreeting(date = new Date()){
   const h = date.getHours()
   if (h < 12) return "Good Morning"
@@ -23,42 +23,49 @@ function getGreeting(date = new Date()){
   return "Good Evening"
 }
 
+/* ---------- App ---------- */
 export default function App(){
   const [tab, setTab] = useState('home')
+
+  // core numbers
   const [seeds, setSeeds] = useState(readLS('seeds', 0))
   const [streak, setStreak] = useState(readLS('streak', 0))
   const [best, setBest] = useState(readLS('best', 0))
   const [orb, setOrb] = useState(readLS('orb', 40))
   const [community, setCommunity] = useState(readLS('community', 58))
   const [pods, setPods] = useState(readLS('pods', true))
+
+  // modals & inputs
   const [nightOpen, setNightOpen] = useState(false)
   const [morningOpen, setMorningOpen] = useState(false)
   const [claim, setClaim] = useState('')
   const [mood, setMood] = useState(3)
+
+  // win toast
   const [lastWin, setLastWin] = useState(null)
 
-  // Greeting banner
+  // greeting banner
   const [greeting, setGreeting] = useState(getGreeting())
   useEffect(() => { const t = setInterval(() => setGreeting(getGreeting()), 60_000); return () => clearInterval(t) }, [])
 
-  // ONCE-PER-DAY story card visibility
+  // daily story (once per day)
   const [showStory, setShowStory] = useState(false)
   useEffect(() => {
     const last = readLS('storyLastShown', '')
     const today = todayISO()
     if (last !== today) setShowStory(true)
   }, [])
-  function dismissStory() {
+  function dismissStory(){
     writeLS('storyLastShown', todayISO())
     setShowStory(false)
   }
 
-  // persist + streak/best
-  useEffect(() => { writeLS('seeds',seeds) }, [seeds])
-  useEffect(() => { writeLS('streak',streak); if(streak>best){ setBest(streak); writeLS('best',streak) } }, [streak])
-  useEffect(() => { writeLS('orb',orb) }, [orb])
-  useEffect(() => { writeLS('community',community) }, [community])
-  useEffect(() => { writeLS('pods',pods) }, [pods])
+  // persist + best
+  useEffect(() => { writeLS('seeds', seeds) }, [seeds])
+  useEffect(() => { writeLS('streak', streak); if (streak > best) { setBest(streak); writeLS('best', streak) } }, [streak])
+  useEffect(() => { writeLS('orb', orb) }, [orb])
+  useEffect(() => { writeLS('community', community) }, [community])
+  useEffect(() => { writeLS('pods', pods) }, [pods])
 
   const dateStr = new Date().toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric' })
   const hue = Math.round(200 + (orb + mood * 8))
@@ -70,34 +77,29 @@ export default function App(){
 
   function celebrate(text){
     setLastWin(text)
-    setSeeds(s=>s+1)
-    setOrb(o=>Math.min(100, o+6))
+    setSeeds(s => s + 1)
+    setOrb(o => Math.min(100, o + 6))
   }
   function doNight(){
-    if(!claim.trim()) return
+    if (!claim.trim()) return
     setNightOpen(false)
-    setStreak(s=>s+1)
-    setCommunity(c=>Math.min(100, c+2))
+    setStreak(s => s + 1)
+    setCommunity(c => Math.min(100, c + 2))
     celebrate(`Night locked: “${claim.toUpperCase()}”`)
     setClaim('')
   }
   function doMorning(){
     setMorningOpen(false)
-    setStreak(s=>s+1)
-    setCommunity(c=>Math.min(100, c+2))
+    setStreak(s => s + 1)
+    setCommunity(c => Math.min(100, c + 2))
     celebrate('Morning locked')
   }
 
   return (
     <div style={{minHeight:'100%', width:'100%', background:'#000', color:'#fff'}}>
-      {/* Welcome banner */}
-      <div style={{maxWidth: '900px', margin: '0 auto', padding:'12px 16px 0'}}>
-        <div style={{
-          background:'linear-gradient(180deg,#111,#0b0b0b)',
-          border:'1px solid #2a2a2a',
-          borderRadius:18,
-          padding:'12px 14px',
-        }}>
+      {/* Greeting / top bar */}
+      <div style={{maxWidth:'900px', margin:'0 auto', padding:'12px 16px 0'}}>
+        <div style={{background:'linear-gradient(180deg,#111,#0b0b0b)', border:'1px solid #2a2a2a', borderRadius:18, padding:'12px 14px'}}>
           <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, flexWrap:'wrap'}}>
             <div style={{fontWeight:700}}>✨ {greeting}, Magnet ✨</div>
             <div style={{fontSize:12, color:'#cfcfcf'}}>{dateStr}</div>
@@ -109,9 +111,9 @@ export default function App(){
       </div>
 
       {/* Main card */}
-      <div style={{maxWidth: '900px', margin:'0 auto', padding:'0 16px'}}>
+      <div style={{maxWidth:'900px', margin:'0 auto', padding:'0 16px'}}>
         <div style={{background:'#121212', border:'1px solid #2a2a2a', borderRadius:22, padding:16}}>
-          <div style={{fontSize:'18px', fontWeight:700', display:'flex', alignItems:'center', gap:'8px'}}>✨ Magnetic Field</div>
+          <div style={{fontSize:'18px', fontWeight:700, display:'flex', alignItems:'center', gap:'8px'}}>✨ Magnetic Field</div>
           <div style={{display:'flex', flexDirection:'column', alignItems:'center', paddingTop:'8px'}}>
             <motion.div style={orbStyle} animate={{scale:[1,1.03,1]}} transition={{duration:3, repeat:Infinity, ease:'easeInOut'}} />
             <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16, width:'100%', marginTop:16, textAlign:'center'}}>
@@ -120,13 +122,13 @@ export default function App(){
               <div><div style={{fontSize:'28px', fontWeight:700}}>{best}</div><div style={{fontSize:'12px', color:'#a1a1a1'}}>Best</div></div>
             </div>
 
-            {/* Action buttons */}
+            {/* Actions */}
             <div style={{marginTop:'16px', display:'flex', flexWrap:'wrap', gap:'10px', justifyContent:'center'}}>
               <button style={btnPrimary} onClick={()=>setNightOpen(true)}>🌙 Night Check-in</button>
               <button style={btnSecondary} onClick={()=>setMorningOpen(true)}>☀️ Morning Habits</button>
             </div>
 
-            {/* ONCE-PER-DAY Story — Raised Vibez tone */}
+            {/* Daily story (once per day) */}
             <AnimatePresence>
               {showStory && (
                 <motion.div
@@ -140,8 +142,8 @@ export default function App(){
                   <div style={{color:'#d6d6d6', lineHeight:1.5}}>
                     <b>Welcome to Raised Vibez</b> — your space to rewire, recharge, and rise.
                     Every check-in adds light to your field; every habit anchors your new timeline.
-                    <b> Tap Morning & Night</b>, watch your Orb charge up, and keep your streak glowing.
-                    This is the practice of becoming the frequency that calls your desires in.
+                    <b> Tap Morning & Night</b>, watch your Orb charge, and keep your streak glowing.
+                    This is where intention turns to momentum — where you become the frequency that attracts what’s meant for you.
                   </div>
                   <div style={{height:10}} />
                   <button style={btnPrimary} onClick={dismissStory}>Got it — let’s rise</button>
@@ -205,7 +207,7 @@ export default function App(){
               <div style={{display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:8}}>
                 {[1,2,3,4,5,6,7].map(d => (
                   <div key={d} style={{aspectRatio:'1/1', display:'grid', placeItems:'center', border:'1px solid #2a2a2a', borderRadius:12, background:'#0a0a0a'}}>
-                    {d<7 ? '⭐' : '❤️'}
+                    {d < 7 ? '⭐' : '❤️'}
                   </div>
                 ))}
               </div>
@@ -296,7 +298,7 @@ export default function App(){
   )
 }
 
-// ---- Small components/styles ----
+/* ---------- Small components & styles ---------- */
 function Row({ label, children }) {
   return (
     <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', margin:'10px 0'}}>
@@ -305,19 +307,18 @@ function Row({ label, children }) {
     </div>
   )
 }
-
 function AutoHide({ onHide, ms = 2200 }){
   useEffect(()=>{ const t=setTimeout(onHide, ms); return ()=>clearTimeout(t) }, [onHide, ms])
   return null
 }
 
-const cardSimple = { background:'#121212', border:'1px solid #2a2a2a', borderRadius:16, padding:12, width:'100%', marginTop:16 }
-const btnPrimary = { background:'#fff', color:'#111', border:'none', padding:'.75rem 1rem', borderRadius:14, fontWeight:600, cursor:'pointer' }
+const cardSimple   = { background:'#121212', border:'1px solid #2a2a2a', borderRadius:16, padding:12, width:'100%', marginTop:16 }
+const btnPrimary   = { background:'#fff', color:'#111', border:'none', padding:'.75rem 1rem', borderRadius:14, fontWeight:600, cursor:'pointer' }
 const btnSecondary = { background:'#1a1a1a', color:'#eee', border:'1px solid #2a2a2a', padding:'.75rem 1rem', borderRadius:14, fontWeight:600, cursor:'pointer' }
-const pill = { border:'1px solid #2a2a2a', background:'#0a0a0a', padding:'.5rem .7rem', borderRadius:12, color:'#e5e5e5' }
-const backdrop = { position:'fixed', inset:0, background:'rgba(0,0,0,.6)', backdropFilter:'blur(3px)', display:'flex', alignItems:'center', justifyContent:'center', padding:16, zIndex:50 }
-const modal = { width:'100%', maxWidth:600, background:'#121212', border:'1px solid #2a2a2a', borderRadius:22, padding:20 }
-const modalTitle = { fontSize:18, fontWeight:700, marginBottom:8 }
-const subtleLabel = { fontSize:12, letterSpacing:1, textTransform:'uppercase', color:'#bdbdbd' }
-const habitRow = { display:'flex', gap:10, alignItems:'center', padding:10, border:'1px solid #2a2a2a', borderRadius:12, background:'#0a0a0a', marginTop:8 }
-const input = { width:'100%', background:'#0a0a0a', border:'1px solid #2a2a2a', color:'#e5e5e5', padding:'.7rem .8rem', borderRadius:12 }
+const pill         = { border:'1px solid #2a2a2a', background:'#0a0a0a', padding:'.5rem .7rem', borderRadius:12, color:'#e5e5e5' }
+const backdrop     = { position:'fixed', inset:0, background:'rgba(0,0,0,.6)', backdropFilter:'blur(3px)', display:'flex', alignItems:'center', justifyContent:'center', padding:16, zIndex:50 }
+const modal        = { width:'100%', maxWidth:600, background:'#121212', border:'1px solid #2a2a2a', borderRadius:22, padding:20 }
+const modalTitle   = { fontSize:18, fontWeight:700, marginBottom:8 }
+const subtleLabel  = { fontSize:12, letterSpacing:1, textTransform:'uppercase', color:'#bdbdbd' }
+const habitRow     = { display:'flex', gap:10, alignItems:'center', padding:10, border:'1px solid #2a2a2a', borderRadius:12, background:'#0a0a0a', marginTop:8 }
+const input        = { width:'100%', background:'#0a0a0a', border:'1px solid #2a2a2a', color:'#e5e5e5', padding:'.7rem .8rem', borderRadius:12 }
