@@ -1,4 +1,4 @@
-const CACHE = 'magnet-mode-v8'
+const CACHE = 'magnet-mode-v10'
 const ASSETS = [
   '/', '/index.html', '/manifest.json',
 ]
