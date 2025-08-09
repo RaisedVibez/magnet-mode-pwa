@@ -15,6 +15,13 @@ function writeLS(key, v) {
   try { localStorage.setItem(key, JSON.stringify(v)) } catch {}
 }
 
+function getGreeting(date = new Date()){
+  const h = date.getHours()
+  if (h < 12) return "Good Morning"
+  if (h < 18) return "Good Afternoon"
+  return "Good Evening"
+}
+
 export default function App(){
   const [tab, setTab] = useState('home')
   const [seeds, setSeeds] = useState(readLS('seeds', 0))
@@ -29,14 +36,33 @@ export default function App(){
   const [mood, setMood] = useState(3)
   const [lastWin, setLastWin] = useState(null)
 
+  // NEW: greeting + banner pulse on streak increase
+  const [greeting, setGreeting] = useState(getGreeting())
+  const [pulse, setPulse] = useState(false)
+  const [prevStreak, setPrevStreak] = useState(readLS('prevStreak', 0))
+
+  useEffect(() => {
+    // update greeting every 60s
+    const t = setInterval(() => setGreeting(getGreeting()), 60_000)
+    return () => clearInterval(t)
+  }, [])
+
   useEffect(() => { writeLS('seeds',seeds) }, [seeds])
-  useEffect(() => { writeLS('streak',streak); if(streak>best){ setBest(streak); writeLS('best',streak) } }, [streak])
+  useEffect(() => {
+    writeLS('streak',streak)
+    if(streak>best){ setBest(streak); writeLS('best',streak) }
+    // pulse if streak increased
+    if (streak > prevStreak){
+      setPulse(true)
+      const timer = setTimeout(()=> setPulse(false), 1200)
+      setPrevStreak(streak); writeLS('prevStreak', streak)
+    }
+  }, [streak])
   useEffect(() => { writeLS('orb',orb) }, [orb])
   useEffect(() => { writeLS('community',community) }, [community])
   useEffect(() => { writeLS('pods',pods) }, [pods])
 
   const dateStr = new Date().toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric' })
-
   const hue = Math.round(200 + (orb + mood * 8))
   const orbStyle = {
     width: '18rem', height: '18rem', borderRadius: '9999px', marginTop:'8px',
@@ -65,11 +91,43 @@ export default function App(){
     celebrate('Morning locked')
   }
 
+  // Little gold glow style
+  const goldGlow = pulse
+    ? { boxShadow: '0 0 0 2px #3a2f06, 0 0 30px 6px rgba(212,175,55,.45)' }
+    : { boxShadow: '0 0 0 1px #2a2a2a' }
+
   return (
     <div style={{minHeight:'100%', width:'100%'}}>
-      <div style={{maxWidth: '900px', margin: '0 auto', padding:'24px 16px 8px'}}>
-        <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-          <div className="badge">{dateStr}</div>
+      <div style={{maxWidth: '900px', margin: '0 auto', padding:'16px 16px 8px'}}>
+
+        {/* NEW: Dynamic Welcome Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          style={{
+            ...goldGlow,
+            background: 'linear-gradient(180deg, #111, #0b0b0b)',
+            borderRadius: 18,
+            padding: '12px 14px',
+            border: '1px solid #2a2a2a'
+          }}
+        >
+          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, flexWrap:'wrap'}}>
+            <div>
+              <div style={{fontWeight:700}}>
+                ✨ {greeting}, Magnet ✨
+              </div>
+              <div style={{fontSize:12, color:'#cfcfcf', marginTop:4}}>
+                You’re on a <b>{streak}-day streak</b> — your field is growing.
+              </div>
+            </div>
+            <div className="badge">{dateStr}</div>
+          </div>
+        </motion.div>
+
+        {/* Star Seeds header line */}
+        <div style={{display:'flex', alignItems:'center', justifyContent:'flex-end', paddingTop:8}}>
           <div className="badge">⭐ Star Seeds: {seeds}</div>
         </div>
       </div>
@@ -85,7 +143,7 @@ export default function App(){
               <div><div style={{fontSize:'28px', fontWeight:700}}>{best}</div><div style={{fontSize:'12px', color:'#a1a1a1'}}>Best</div></div>
             </div>
             <div style={{marginTop:'16px', display:'flex', flexWrap:'wrap', gap:'10px', justifyContent:'center'}}>
-              <button className="btn" onClick={()=>setNightOpen(true)}>🌙 Night Check‑in</button>
+              <button className="btn" onClick={()=>setNightOpen(true)}>🌙 Night Check-in</button>
               <button className="btn secondary" onClick={()=>setMorningOpen(true)}>☀️ Morning Habits</button>
             </div>
 
@@ -100,7 +158,7 @@ export default function App(){
                 <div style={{fontSize:'12px', color:'#a1a1a1'}}>{community}% complete</div>
               </div>
               <div className="progress"><div style={{width:`${community}%`, transition:'width .4s ease'}}></div></div>
-              <div style={{marginTop:'8px', fontSize:'12px', color:'#d8c17a'}}>♾ PORTAL BONUS — claim both check‑ins to unlock a mini‑audio.</div>
+              <div style={{marginTop:'8px', fontSize:'12px', color:'#d8c17a'}}>♾ PORTAL BONUS — claim both check-ins to unlock a mini-audio.</div>
             </div>
           </div>
         </div>
@@ -118,9 +176,9 @@ export default function App(){
             <div style={{display:'grid', gap:'16px', gridTemplateColumns:'repeat(auto-fit, minmax(260px,1fr))', marginTop:'16px'}}>
               <div className="card">
                 <div style={{fontWeight:700, marginBottom:'8px'}}>🏆 Milestones</div>
-                <div>🔥 7‑day portal: unlock mini audio</div>
-                <div>🔥 14‑day: evolving sound sigil</div>
-                <div>🔥 21‑day: wallpaper pack + streak insurance</div>
+                <div>🔥 7-day portal: unlock mini audio</div>
+                <div>🔥 14-day: evolving sound sigil</div>
+                <div>🔥 21-day: wallpaper pack + streak insurance</div>
               </div>
               <div className="card">
                 <div style={{fontWeight:700, marginBottom:'8px'}}>🎁 Vault</div>
@@ -134,7 +192,7 @@ export default function App(){
 
           {tab==='challenge' && (
             <div className="card" style={{marginTop:'16px'}}>
-              <div style={{fontWeight:700, marginBottom:'8px'}}>7‑Day Magnetic Challenge</div>
+              <div style={{fontWeight:700, marginBottom:'8px'}}>7-Day Magnetic Challenge</div>
               <div style={{display:'grid', gridTemplateColumns:'repeat(7, 1fr)', gap:'8px'}}>
                 {[1,2,3,4,5,6,7].map(d => (
                   <div key={d} style={{aspectRatio:'1/1', display:'grid', placeItems:'center'}} className="pill">{d<7?'⭐':'❤️'}</div>
@@ -165,7 +223,7 @@ export default function App(){
         {nightOpen && (
           <motion.div className="modal-backdrop" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
             <motion.div className="modal" initial={{y:40, opacity:0}} animate={{y:0, opacity:1}} exit={{y:10, opacity:0}}>
-              <div style={{fontSize:'18px', fontWeight:700, marginBottom:'8px'}}>🌙 Night Check‑in</div>
+              <div style={{fontSize:'18px', fontWeight:700, marginBottom:'8px'}}>🌙 Night Check-in</div>
               <div className="badge">Track</div>
               <div style={{display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:'8px', marginTop:'6px'}}>
                 {tracks.map(t => <button key={t} className="pill" onClick={()=>{}}>{t}</button>)}
@@ -181,56 +239,4 @@ export default function App(){
                 <div>🎧 Pods on?</div>
                 <input type="checkbox" checked={pods} onChange={e=>setPods(e.target.checked)} />
               </div>
-              <div style={{display:'flex', gap:'8px', marginTop:'12px'}}>
-                <button className="btn" style={{flex:1}} onClick={doNight}>Claim Win</button>
-                <button className="btn secondary" style={{flex:1}} onClick={()=>setNightOpen(false)}>Cancel</button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {morningOpen && (
-          <motion.div className="modal-backdrop" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
-            <motion.div className="modal" initial={{y:40, opacity:0}} animate={{y:0, opacity:1}} exit={{y:10, opacity:0}}>
-              <div style={{fontSize:'18px', fontWeight:700, marginBottom:'8px'}}>☀️ Morning Habits</div>
-              {['Hydrate','3 breaths + mantra','2‑min movement','Gratitude note'].map(h => (
-                <label key={h} style={{display:'flex', gap:'10px', alignItems:'center', padding:'10px', border:'1px solid #2a2a2a', borderRadius:'12px', background:'#0a0a0a', marginTop:'8px'}}>
-                  <input type="checkbox" /> <span>{h}</span>
-                </label>
-              ))}
-              <div style={{display:'flex', gap:'8px', marginTop:'12px'}}>
-                <button className="btn" style={{flex:1}} onClick={doMorning}>Mark Complete</button>
-                <button className="btn secondary" style={{flex:1}} onClick={()=>setMorningOpen(false)}>Cancel</button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {lastWin && (
-          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:'fixed', inset:0, pointerEvents:'none'}}>
-            {[...Array(24)].map((_,i)=>(
-              <motion.div key={i} initial={{x: Math.random()*window.innerWidth, y: window.innerHeight+20, opacity:0}}
-                animate={{y:-40, opacity:[0,1,1,0]}} transition={{duration:1.6+Math.random(), delay: Math.random()*.3}} style={{position:'absolute'}}>
-                ⭐
-              </motion.div>
-            ))}
-            <motion.div initial={{y:40, opacity:0}} animate={{y:0, opacity:1}} exit={{y:20, opacity:0}}
-              style={{position:'fixed', left:'50%', transform:'translateX(-50%)', bottom:'20px', background:'#121212', border:'1px solid #2a2a2a', borderRadius:'14px', padding:'10px 14px'}}>
-              ✨ {lastWin}
-            </motion.div>
-            <AutoHide onHide={()=>setLastWin(null)} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
-
-function AutoHide({ onHide, ms = 2200 }){
-  useEffect(()=>{ const t=setTimeout(onHide, ms); return ()=>clearTimeout(t) }, [onHide, ms])
-  return null
-}
+              <div style={
