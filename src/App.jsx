@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
+
 const tracks = [
   "3:33 HR Magnetic",
   "Everything is a Miracle",
