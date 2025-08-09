@@ -1,3 +1,5 @@
+const CACHE = 'magnet-mode-v7'
+
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
